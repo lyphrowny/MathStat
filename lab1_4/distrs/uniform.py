@@ -3,8 +3,8 @@ from .base_distribution import *
 
 class Uniform(BaseDistribution):
 
-    def __init__(self, a, b):
-        super().__init__()
+    def __init__(self, a, b, lims):
+        super().__init__(lims)
         self._a = a
         self._b = b
 

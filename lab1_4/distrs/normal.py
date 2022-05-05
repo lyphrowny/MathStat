@@ -1,10 +1,12 @@
+import scipy.special as sps
+
 from .base_distribution import *
 
 
 class Normal(BaseDistribution):
 
-    def __init__(self, mu, sigma):
-        super().__init__()
+    def __init__(self, mu, sigma, lims):
+        super().__init__(lims)
         self._mu = mu
         self._sigma = sigma
 
@@ -16,4 +18,4 @@ class Normal(BaseDistribution):
                np.exp(-np.power(x - self._mu, 2) / (2 * np.power(self._sigma, 2)))
 
     def get_cdf(self, x):
-        return 0.5 * (1 + np.erf((x - self._mu) / (self._sigma * np.sqrt(2))))
+        return 0.5 * (1 + sps.erf((x - self._mu) / (self._sigma * np.sqrt(2))))

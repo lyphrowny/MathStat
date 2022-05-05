@@ -3,8 +3,8 @@ from .base_distribution import *
 
 class Cauchy(BaseDistribution):
 
-    def __init__(self, x0, gamma):
-        super().__init__()
+    def __init__(self, x0, gamma, lims):
+        super().__init__(lims)
         self._x0 = x0
         self._gamma = gamma
 
@@ -15,4 +15,4 @@ class Cauchy(BaseDistribution):
         return 1 / (np.pi * self._gamma * (1 + np.power((x - self._x0) / self._gamma, 2)))
 
     def get_cdf(self, x):
-        return 1 / np.pi * np.atan((x - self._x0) / self._gamma) + 0.5
+        return 1 / np.pi * np.arctan((x - self._x0) / self._gamma) + 0.5
