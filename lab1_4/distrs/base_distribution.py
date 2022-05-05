@@ -13,3 +13,7 @@ class BaseDistribution:
     @abstractmethod
     def get_pdf(self, x):
         pass
+
+    @abstractmethod
+    def get_cdf(self, x):
+        pass

@@ -14,3 +14,6 @@ class Poisson(BaseDistribution):
 
     def get_pdf(self, k):
         return np.float_power(self._lambda, k) / sps.factorial(k) * np.exp(-self._lambda)
+
+    def get_cdf(self, x):
+        return np.exp(-self._lambda) * sum(np.power(self._lambda, i) / sps.factorial(i) for i in range(np.floor(x)))

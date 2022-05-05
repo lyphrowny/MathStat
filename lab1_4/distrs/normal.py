@@ -14,3 +14,6 @@ class Normal(BaseDistribution):
     def get_pdf(self, x):
         return 1 / (self._sigma * np.sqrt(2 * np.pi)) * \
                np.exp(-np.power(x - self._mu, 2) / (2 * np.power(self._sigma, 2)))
+
+    def get_cdf(self, x):
+        return 0.5 * (1 + np.erf((x - self._mu) / (self._sigma * np.sqrt(2))))

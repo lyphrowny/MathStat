@@ -13,3 +13,6 @@ class Cauchy(BaseDistribution):
 
     def get_pdf(self, x):
         return 1 / (np.pi * self._gamma * (1 + np.power((x - self._x0) / self._gamma, 2)))
+
+    def get_cdf(self, x):
+        return 1 / np.pi * np.atan((x - self._x0) / self._gamma) + 0.5

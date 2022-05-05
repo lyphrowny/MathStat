@@ -13,3 +13,6 @@ class Uniform(BaseDistribution):
 
     def get_pdf(self, x):
         return [0, 1 / (self._b - self._a)][self._a <= x <= self._b]
+
+    def get_cdf(self, x):
+        return 0 if x < self._a else (1 if x > self._b else (x - self._a) / (self._b - self._a))
