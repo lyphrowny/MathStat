@@ -1,0 +1,10 @@
+Normal, n=20 & 0.0163 \\
+Normal, n=100 & 0.00898 \\
+Cauchy, n=20 & 0.1408 \\
+Cauchy, n=100 & 0.15245 \\
+Laplace, n=20 & 0.0633 \\
+Laplace, n=100 & 0.0627 \\
+Poisson, n=20 & 0.0206 \\
+Poisson, n=100 & 0.01043 \\
+Uniform, n=20 & 0.002 \\
+Uniform, n=100 & 0.0 \\
