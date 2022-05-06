@@ -22,6 +22,8 @@ def lab1(distrs, ps_num, bins_num=20, path=Path("../imgs")):
             _, bins, _ = ax.hist(data, bins_num, density=True)
             ax.plot(bins, list(map(d.get_pdf, bins)))
             ax.set_title(f"n={p_num}")
+            ax.set_xlabel("x")
+            ax.set_ylabel("Density")
         plt.savefig(path.joinpath(title))
         plt.close(fig)
 

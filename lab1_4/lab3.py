@@ -20,6 +20,7 @@ def _boxplot(distr, ps_num, plot_dir):
     plt.title(title)
     data = list(map(distr.get_rvs, ps_num))
     plt.boxplot(data, labels=ps_num, vert=False)
+    plt.xlabel("x")
     plt.ylabel("n")
 
     plt.savefig(plot_dir.joinpath(title))
