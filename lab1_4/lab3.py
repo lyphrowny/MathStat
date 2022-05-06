@@ -1,7 +1,6 @@
-from pathlib import Path
-
 import matplotlib.pyplot as plt
 import numpy as np
+from pathlib import Path
 
 from lab2 import _z_p
 from setup import set_up
@@ -40,6 +39,19 @@ def _outlier(distr, ps_num, times=1000):
     return r
 
 
+def _make_table(table):
+    return f"""\\begin{{table}}[H]
+    \\centering
+    \\begin{{tabular}}{{{"|".join("c" * 2)}}}
+        Выборка & Доля выбросов \\\\
+        \\hline
+        {f"{'    ' * 2}".join(table)}
+    \\end{{tabular}}
+    \\caption{{}}
+    \\label{{}}
+\\end{{table}}"""
+
+
 def lab3(distrs, ps_num, plot_dir, table_dir, times=1000):
     if not plot_dir.exists():
         plot_dir.mkdir()
@@ -50,8 +62,8 @@ def lab3(distrs, ps_num, plot_dir, table_dir, times=1000):
         _boxplot(distr, ps_num, plot_dir)
         table.extend(_outlier(distr, ps_num, times))
 
-    dest = table_dir.joinpath("outliers")
-    dest.write_text("".join(table))
+    dest = table_dir.joinpath("outliers.tex")
+    dest.write_text(_make_table(table))
 
 
 if __name__ == "__main__":

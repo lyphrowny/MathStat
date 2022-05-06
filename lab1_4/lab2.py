@@ -1,6 +1,6 @@
 from collections import defaultdict
-from itertools import product
 from pathlib import Path
+from typing import List
 
 import numpy as np
 
@@ -40,21 +40,35 @@ def _tr_med(xs, r=0.25):
     return 1 / (n - 2 * nr) * sum(xs[int(nr) + 1:n - int(r) + 1])
 
 
-def _make_table(distr, ps_num, char_names, chars):
+def _make_table_part(distr, ps_num, char_names, chars):
     n = len(char_names)
     tol = 6
     pre = f"{distr.__class__.__name__} n={ps_num}{' & ' * n}\\\\\n" \
-          f"& {' & '.join(f'${name}$' for name in char_names)} \\\\\n"
-    mid = ''.join(f"{name} & {' & '.join(f'{ch:.{tol}f}' for ch in char)} \\\\\n" for name, char in chars.items())
-    suf = f"\\hline \\\\\n"
-    return pre + mid + suf
+          f"\\hline \n" \
+          f"& {' & '.join(f'${name}$' for name in char_names)} \\\\\n" \
+          f"\\hline \n"
+    mid = ''.join(f"${name}$ & {' & '.join(f'{ch:.{tol}f}' for ch in char)} \\\\\n" for name, char in chars.items())
+    suf = f"\\hline\n" \
+          f"\\multicolumn{{{n+1}}}{{c}}{{}} \\\\\n"
+    return [pre, mid, suf]
+
+
+def _make_table(table: List[str], cols_num):
+    return f"""\\begin{{table}}[H]
+    \\centering
+    \\begin{{tabular}}{{{"|".join("c" * (cols_num+1))}}}
+{"".join(table[:~0])}
+    \\end{{tabular}}
+    \\caption{{}}
+    \\label{{}}
+\\end{{table}}"""
 
 
 def lab2(distrs, ps_num, table_dir, times=1000):
     if not table_dir.exists():
         table_dir.mkdir(parents=True)
     for distr in distrs:
-        dest = table_dir.joinpath(distr.__class__.__name__)
+        dest = table_dir.joinpath(f"{distr.__class__.__name__}.tex")
         dest.write_text(_gen_table(distr, ps_num, times))
 
 
@@ -65,7 +79,7 @@ def _gen_table(distr, ps_num, times=1000):
         for _ in range(times):
             x = sorted(distr.get_rvs(p_num))
             d[r"\bar{x}"].append(_mean(x))
-            d["med x"].append(_median(x))
+            d["med\\; x"].append(_median(x))
             d["z_R"].append(_z_r(x))
             d["z_Q"].append(_z_q(x, [0.25, 0.75]))
             d["z_tr"].append(_tr_med(x))
@@ -73,13 +87,13 @@ def _gen_table(distr, ps_num, times=1000):
         for v in d.values():
             chars["E(z)"].append(_mean(v))
             chars["D(z)"].append(_mean(np.power(v, 2)) - np.power(chars["E(z)"][~0], 2))
-            chars["E(z) - \\sqrt(D(z))"].append(chars["E(z)"][~0] - np.sqrt(chars["D(z)"][~0]))
-            chars["E(z) + \\sqrt(D(z))"].append(chars["E(z)"][~0] + np.sqrt(chars["D(z)"][~0]))
-        table.append(_make_table(distr, p_num, d.keys(), chars))
-    return "".join(table)
+            chars["E(z) - \\sqrt{D(z)}"].append(chars["E(z)"][~0] - np.sqrt(chars["D(z)"][~0]))
+            chars["E(z) + \\sqrt{D(z)}"].append(chars["E(z)"][~0] + np.sqrt(chars["D(z)"][~0]))
+        table.extend(_make_table_part(distr, p_num, d.keys(), chars))
+    return _make_table(table, len(d.keys()))
 
 
 if __name__ == "__main__":
     print(_z_q([1, 2, 3, 4], [0.25, 0.75]))
     distrs = set_up()
-    lab2(distrs, [10, 100, 1000], Path("./data/tables"))
+    lab2(distrs, [10, 100, 1000], Path("tables"))
