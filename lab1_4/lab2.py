@@ -50,11 +50,11 @@ def _make_table(distr, ps_num, char_names, chars):
     return pre + mid + suf
 
 
-def lab2(distrs, ps_num, dir, times=1000):
+def lab2(distrs, ps_num, table_dir, times=1000):
+    if not table_dir.exists():
+        table_dir.mkdir(parents=True)
     for distr in distrs:
-        if not dir.exists():
-            dir.mkdir(parents=True)
-        dest = dir.joinpath(distr.__class__.__name__)
+        dest = table_dir.joinpath(distr.__class__.__name__)
         dest.write_text(_gen_table(distr, ps_num, times))
 
 

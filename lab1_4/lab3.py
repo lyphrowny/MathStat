@@ -15,16 +15,14 @@ def _q3(xs):
     return _z_p(xs, 0.75)
 
 
-def _boxplot(distr, ps_num, dir):
+def _boxplot(distr, ps_num, plot_dir):
     title = distr.__class__.__name__
     plt.title(title)
     data = list(map(distr.get_rvs, ps_num))
     plt.boxplot(data, labels=ps_num, vert=False)
     plt.ylabel("n")
 
-    if not dir.exists():
-        dir.mkdir()
-    plt.savefig(dir.joinpath(title))
+    plt.savefig(plot_dir.joinpath(title))
     plt.close()
 
 
@@ -42,12 +40,15 @@ def _outlier(distr, ps_num, times=1000):
 
 
 def lab3(distrs, ps_num, plot_dir, table_dir, times=1000):
+    if not plot_dir.exists():
+        plot_dir.mkdir()
+    if not table_dir.exists():
+        table_dir.mkdir(parents=True)
     table = []
     for distr in distrs:
         _boxplot(distr, ps_num, plot_dir)
         table.extend(_outlier(distr, ps_num, times))
-    if not table_dir.exists():
-        table_dir.mkdir(parents=True)
+
     dest = table_dir.joinpath("outliers")
     dest.write_text("".join(table))
 
