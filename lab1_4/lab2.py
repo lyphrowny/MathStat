@@ -95,6 +95,18 @@ def _gen_table(distr, ps_num, times=1000):
 
 
 if __name__ == "__main__":
-    print(_z_q([1, 2, 3, 4], [0.25, 0.75]))
-    distrs = set_up()
-    lab2(distrs, [10, 100, 1000], Path("tables"))
+    distr = set_up()[0]
+    test_data = np.sort(distr.get_rvs(1000))
+    # test_data = list(range(1, 11))
+    quarts = [0.25, 0.75]
+    print("my quartiles")
+    print(", ".join(f"x[n*{p}]: {_z_p(test_data, p)}" for p in quarts))
+    print(f"z_Q: {_z_q(test_data, quarts)}")
+    print()
+    print("numpy quartiles")
+    print(", ".join(f"x[n*{p}]: {np.quantile(test_data, p)}" for p in quarts))
+    print(f"z_Q: {sum(np.quantile(test_data, p) for p in quarts) / 2}")
+    print()
+    print(f"z_tr: {_tr_med(test_data)}")
+    # distrs = set_up()
+    # lab2(distrs, [10, 100, 1000], Path("tables"))
