@@ -36,8 +36,9 @@ def _z_q(xs, ps):
 
 def _tr_med(xs, r=0.25):
     n = len(xs)
-    nr = n * r
-    return 1 / (n - 2 * nr) * sum(xs[int(nr) + 1:n - int(r) + 1])
+    nr = int(n * r)
+    # substitute 1 as indexes start from 0
+    return 1 / (n - 2 * nr) * sum(xs[nr:n - nr])
 
 
 def _make_table_part(distr, ps_num, char_names, chars):
@@ -82,7 +83,7 @@ def _gen_table(distr, ps_num, times=1000):
             d["med\\; x"].append(_median(x))
             d["z_R"].append(_z_r(x))
             d["z_Q"].append(_z_q(x, [0.25, 0.75]))
-            d["z_tr"].append(_tr_med(x))
+            d["z_{tr}"].append(_tr_med(x))
         chars = defaultdict(list)
         for v in d.values():
             chars["E(z)"].append(_mean(v))
