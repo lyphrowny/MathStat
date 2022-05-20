@@ -9,8 +9,14 @@ import matplotlib.transforms as transforms
 def _get_pearson(pnts):
     x, y = list(zip(*pnts))
     x_mean, y_mean = list(map(np.mean, (x, y)))
-    return sum((_x - x_mean) * (_y - y_mean) for _x, _y in pnts) / np.sqrt(
-        sum((_x - x_mean) ** 2 for _x in x) * sum((_y - y_mean) ** 2 for _y in y))
+
+    h, l_x, l_y = 0, 0, 0
+    for _x, _y in pnts:
+        d_x, d_y = _x - x_mean, _y - y_mean
+        h += d_x * d_y
+        l_x += d_x ** 2
+        l_y += d_y ** 2
+    return h / np.sqrt(l_x * l_y)
 
 
 def _get_quad_coeff(pnts):
@@ -21,11 +27,6 @@ def _get_quad_coeff(pnts):
         # -------
         # ~1 | ~0
         quads[eval(f"{'~' * (bool(y < 0))}+{bool(x < 0)}")] += 1
-        # if x >= 0:
-        #     quad_num = 0 if y >= 0 else 1
-        # else:
-        #     quad_num = 2 if y < 0 else 3
-        # quads[quad_num] += 1
     return (sum(quads[::2]) - sum(quads[1::2])) / len(pnts)
 
 
@@ -34,8 +35,13 @@ def _get_spearman(pnts):
     mean = (n + 1) / 2
     rank_x, rank_y = list(map(lambda xs: {x: r for r, x in enumerate(np.sort(xs))}, zip(*pnts)))
 
-    return sum((rank_x[_x] - mean) * (rank_y[_y] - mean) for _x, _y in pnts) / (
-            2 * sum((i - mean) ** 2 for i in range(1, (n + 1) // 2))) ** 2
+    h, l_x, l_y = 0, 0, 0
+    for _x, _y in pnts:
+        dr_x, dr_y = rank_x[_x] - mean, rank_y[_y] - mean
+        h += dr_x * dr_y
+        l_x += dr_x ** 2
+        l_y += dr_y ** 2
+    return h / np.sqrt(l_x * l_y)
 
 
 def _conf_ellipse(x, y, ax, n_std=3.0, **kwargs):
