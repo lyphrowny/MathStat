@@ -2,6 +2,8 @@ from pathlib import Path
 from scipy.stats import chi2, t
 import numpy as np
 
+from lab5_8.table_utils import caplab, SubTable, Table
+
 
 def norm_m(n, a):
     distr = np.random.standard_normal(n)
@@ -37,38 +39,33 @@ def as_s(n, a):
     return [std * np.power(1 + U, -0.5), std * np.power(1 - U, -0.5)]
 
 
-def _gen_table(nums, a, meth_name, tab_path: Path):
-    n_cols = 3
-    spacer = " " * 8
-    ending = " \\\\\n"
-    head = f"""\\begin{{table}}[H]
-\\centering
-\\begin{{tabular}}{{{'|'.join('c' * n_cols)}}}
-"""
-    tail = """    \\end{tabular}
-    \\caption{}
-    \\label{}
-\\end{table}"""
+def _gen_table(nums, a, meth_name, cplb, tab_path: Path, tol=2):
+    _trunc = lambda v, tol=tol: f"{v:.{tol}f}"
+    _prettify = lambda lims, name: (lambda *l: f"{l[0]} < {name} < {l[1]}")(*map(_trunc, lims))
+    letters = "ms"
+    n_cols = len(letters) + 1
 
-    _trunc = lambda v, tol=2: f"{v:.{tol}f}"
-    _prettify = lambda lims, name: f"{lims[0]} < {name} < {lims[1]}"
-
-    cntx = []
+    subtbls = []
     for n in nums:
-        title = f"n={n}"
-        m = _prettify(list(map(_trunc, eval(f"{meth_name}_m({n}, {a})"))), "m")
-        s = _prettify(list(map(_trunc, eval(f"{meth_name}_s({n}, {a})"))), "s")
-        cntx.extend([spacer + " & ".join((title, "m", "s")) + ending, spacer + " & ".join(("", m, s)) + ending,
-                     spacer + "\\hline\n", spacer + f"\\multicolumn{{{n_cols}}}{{c}}{{}}" + ending])
+        hdrs = [f"n={n}"]
+        lines = [""]
+        for let in letters:
+            hdrs.append(let)
+            lines.append(_prettify(eval(f"{meth_name}_{let}({n}, {a})"), let))
+        subtbls.append(SubTable(hdrs, lines))
+    tbl = Table(n_cols, subtbls, cplb)
 
     if not tab_path.exists():
         tab_path.mkdir(parents=True)
-    tab_path.joinpath(f"{meth_name}.tex").write_text(head + "".join(cntx) + tail)
+    tab_path.joinpath(f"{meth_name}.tex").write_text(tbl.gen_table(tol=tol))
 
 
 def lab8(nums, tab_path: Path, a=0.05):
-    _gen_table(nums, a, "norm", tab_path)
-    _gen_table(nums, a, "as", tab_path)
+    meths = {"norm": caplab("Доверительные интервалы для параметров нормального распределения", "tab:interv_simple"),
+             "as": caplab("Доверительные интервалы для параметров произвольного распределения. Асимптотический подход",
+                          "tab:interv_asimpt")}
+    for k, v in meths.items():
+        _gen_table(nums, a, k, v, tab_path)
 
 
 if __name__ == "__main__":

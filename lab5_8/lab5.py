@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Ellipse
 import matplotlib.transforms as transforms
 
+from lab5_8.table_utils import caplab, SubTable, Table
+
 
 def _get_pearson(pnts):
     x, y = list(zip(*pnts))
@@ -76,51 +78,34 @@ def _make_subtable(data, title: str):
     c = defaultdict(list)
     for pnts in data:
         c["r"].append(_get_pearson(pnts))
-        c["r_{S}"].append(_get_quad_coeff(pnts))
-        c["r_{Q}"].append(_get_spearman(pnts))
+        c["r_{Q}"].append(_get_quad_coeff(pnts))
+        c["r_{S}"].append(_get_spearman(pnts))
     r = defaultdict(list)
     for v in c.values():
         r["E(z)"].append(np.mean(v))
         r["E(z^2)"].append(np.mean([_v * _v for _v in v]))
         r["D(z)"].append(np.std(v))
 
-    beautify = lambda s: f"${s}$"
-    tol = 6
-    trunc = lambda v: f"{v:.{tol}f}"
-    head = " & ".join(map(beautify, (title, *c.keys()))) + " \\\\"
-    conts = [f"{' & '.join((beautify(k), *map(trunc, v)))} \\\\" for k, v in r.items()]
-    return [head] + conts
+    subtbl = SubTable((title, *c.keys()), [[k, *v] for k, v in r.items()])
+    return subtbl, len(c.keys()) + 1
 
 
-def _gen_table(table):
-    n = table[0][0].count('&') + 1
-    spacer = " " * 8
-    filler = f"\n{spacer}\\hline\n" \
-             f"{spacer}\\multicolumn{{{n}}}{{c}}{{}} \\\\\n"
-    tab = f"""\\begin{{table}}[H]
-    \\centering
-    \\begin{{tabular}}{{{'|'.join('c' * n)}}}
-{filler.join(chr(10).join(spacer + line for line in subtbl) for subtbl in table)}
-    \\end{{tabular}}
-    \\caption{{}}
-    \\label{{}}
-\\end{{table}}"""
-    return tab
-
-
-def _make_table(distrs, title, subtitles, tab_path: Path, times=1000):
-    table = []
+def _make_table(distrs, title, subtitles, cplb, tab_path: Path, tol=6, times=1000):
+    subtbls = []
+    n_cols = 0
     for subttl, distr in zip(subtitles, distrs):
         data = [distr() for _ in range(times)]
-        table.append(_make_subtable(data, subttl))
+        subtbl, n_cols = _make_subtable(data, subttl)
+        subtbls.append(subtbl)
+    table = Table(n_cols, subtbls, cplb)
 
     if not tab_path.exists():
         tab_path.mkdir(parents=True)
-    tab_path.joinpath(f"{title}.tex").write_text(_gen_table(table))
+    tab_path.joinpath(f"{title}.tex").write_text(table.gen_table(tol))
 
 
 def __get_cov(rho, sigma=1):
-    return [[sigma, rho], [rho, sigma]]
+    return (sigma, rho), (rho, sigma)
 
 
 def lab5(nums, rhos, tab_path: Path, fig_path: Path):
@@ -131,18 +116,26 @@ def lab5(nums, rhos, tab_path: Path, fig_path: Path):
     for n in nums:
         distrs = []
         for c in covs:
-            distrs.append(lambda d=rng.multivariate_normal(mean=[0, 0], cov=c, size=n): d)
+            distrs.append(
+                lambda _c=c, _n=n: (
+                    lambda d=rng.multivariate_normal(mean=[0, 0], cov=_c, size=_n): d
+                )()
+            )
         title = f"n={n}"
-        subttls = [f"$\\rho={rho}$" for rho in rhos]
-        _make_table(distrs, title, subttls, tab_path)
-        _plot_ellipses(distrs, title, subttls, fig_path)
+        subttls = [f"\\rho={rho}" for rho in rhos]
+        _make_table(
+            distrs, title, subttls, caplab(f"Двумерное нормальное распределение, {title}", f"tab:norm{n}"), tab_path
+        )
 
-        uber_distrs.append(lambda d=0.9 * rng.multivariate_normal(mean=[0, 0], cov=__get_cov(0.9), size=n) + \
-                                    0.1 * rng.multivariate_normal(mean=[0, 0], cov=__get_cov(-0.9, 10), size=n): d)
-    title = f"mix"
-    subttls = [f"$n={n}$" for n in nums]
-    _make_table(uber_distrs, title, subttls, tab_path)
-    _plot_ellipses(uber_distrs, title, subttls, fig_path)
+        uber_distrs.append(
+            lambda _c=__get_cov(0.9), _cc=__get_cov(-0.9, 10), _n=n: (
+                lambda a=0.9 * rng.multivariate_normal(mean=[0, 0], cov=_c, size=_n),
+                       b=0.1 * rng.multivariate_normal(mean=[0, 0], cov=_cc, size=_n): a + b
+            )()
+        )
+    title = "mix"
+    subttls = [f"n={n}" for n in nums]
+    _make_table(uber_distrs, title, subttls, caplab("Смесь нормальных распределений", "tab:norm_mix"), tab_path)
 
 
 if __name__ == "__main__":
