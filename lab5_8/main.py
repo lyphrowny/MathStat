@@ -10,7 +10,7 @@ def main(tab_dir: Path, fig_dir: Path):
     lab5((20, 60, 100), (0, 0.5, 0.9), tab_dir.joinpath("lab5"), fig_dir.joinpath("lab5"))
     lab6((-1.8, 2, 0.2), fig_dir.joinpath("lab6"))
     run_lab7((100, 20), 0.05, tab_dir.joinpath("lab7"))
-    lab8((20, 100), tab_dir.joinpath("lab8"))
+    lab8((20, 100), tab_dir.joinpath("lab8"), fig_dir.joinpath("lab8"))
 
 
 if __name__ == "__main__":
