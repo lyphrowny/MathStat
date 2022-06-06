@@ -72,6 +72,21 @@ def _plot_whist(octs, title, subttls, fig_dir: Path):
     fig.savefig(fig_dir.joinpath(title))
 
 
+def _plot_no_drift(ds, octs: Octave, title, subttls, fig_dir: Path, tol=1e-4):
+    fig, axs = plt.subplots(1, len(ds), figsize=(10.5, 4), tight_layout=True)
+    fig.suptitle(title)
+    for d, oct, ax, subttl in zip(ds, octs, axs, subttls):
+        d, ws = map(np.array, (d, oct.ws))
+        xs = np.arange(1, len(d) + 1)
+        fixed = d - xs * oct.b
+        ax.vlines(xs, fixed - ws * tol, fixed + ws * tol, label="I")
+        ax.plot(xs, np.full(xs[~0], oct.a), label="Lin", color="orange", linewidth=2.5)
+        ax.set(title=subttl, xlabel="n", ylabel="mV")
+        ax.legend()
+    fig.show()
+    fig.savefig(fig_dir.joinpath(title))
+
+
 def lab9(data_dir: Path, fig_dir: Path, tol=1e-4):
     if not fig_dir.exists():
         fig_dir.mkdir(parents=True)
@@ -83,7 +98,8 @@ def lab9(data_dir: Path, fig_dir: Path, tol=1e-4):
 
     *octs, = starmap(Octave, map(_read_octave, data_dir.glob("*.txt")))
     # _lin_drift(ds, octs, "Drifted data", subttls, fig_dir, tol=tol)
-    _plot_whist(octs, "Weights' histogram", subttls, fig_dir)
+    # _plot_whist(octs, "Weights' histogram", subttls, fig_dir)
+    _plot_no_drift(ds, octs, "Data w\\o drift", subttls, fig_dir, tol=tol)
 
 
 if __name__ == "__main__":
