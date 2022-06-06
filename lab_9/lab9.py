@@ -61,6 +61,17 @@ def _lin_drift(ds, octs: Octave, title, subttls, fig_dir: Path, tol=1e-4):
     fig.savefig(fig_dir.joinpath(title))
 
 
+def _plot_whist(octs, title, subttls, fig_dir: Path):
+    fig, axs = plt.subplots(1, len(octs), figsize=(10.5, 4), tight_layout=True)
+    fig.suptitle(title)
+    for oct, ax, subttl in zip(octs, axs, subttls):
+        ax.hist(oct.ws, label="w")
+        ax.set(title=subttl, xlabel="weight", ylabel="n")
+        ax.legend()
+    fig.show()
+    fig.savefig(fig_dir.joinpath(title))
+
+
 def lab9(data_dir: Path, fig_dir: Path, tol=1e-4):
     if not fig_dir.exists():
         fig_dir.mkdir(parents=True)
@@ -71,7 +82,8 @@ def lab9(data_dir: Path, fig_dir: Path, tol=1e-4):
     # _plot_dintervals(ds, "Intervaled data", file_names, fig_dir, tol=tol)
 
     *octs, = starmap(Octave, map(_read_octave, data_dir.glob("*.txt")))
-    _lin_drift(ds, octs, "Drifted data", subttls, fig_dir, tol=tol)
+    # _lin_drift(ds, octs, "Drifted data", subttls, fig_dir, tol=tol)
+    _plot_whist(octs, "Weights' histogram", subttls, fig_dir)
 
 
 if __name__ == "__main__":
