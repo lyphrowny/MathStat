@@ -136,6 +136,21 @@ def _plot_jakkar(ds, octs, title, fig_dir: Path, tol=1e-4):
     return opt_r
 
 
+def _plot_jhist(ds, octs, r_opt, title, fig_dir: Path, tol=1e-4):
+    *ds, = map(np.array, ds)
+    xs = np.arange(1, len(ds[0]) + 1)
+    fix1, fix2 = [np.array([d - tol * oct.ws, d + tol * oct.ws]) - oct.b * xs for d, oct in zip(ds, octs)]
+    d_new = np.hstack((fix1 * r_opt, fix2))
+
+    plt.title(title)
+    plt.hist(np.sum(d_new, axis=0) / 2, label="combined with $R_{opt}$")
+    plt.xlabel("weights")
+    plt.ylabel("n")
+    plt.legend()
+    plt.show()
+    plt.savefig(fig_dir.joinpath(title))
+
+
 def lab9(data_dir: Path, fig_dir: Path, tol=1e-4):
     if not fig_dir.exists():
         fig_dir.mkdir(parents=True)
@@ -150,7 +165,8 @@ def lab9(data_dir: Path, fig_dir: Path, tol=1e-4):
     # _plot_whist(octs, "Weights' histogram", subttls, fig_dir)
     # _plot_no_drift(ds, octs, "Data w\\o drift", subttls, fig_dir, tol=tol)
     # _plot_ndhist(ds, octs, "$I^c$ histogram", subttls, fig_dir)
-    _plot_jakkar(ds, octs, "Jaccard vs $R_{21}$", fig_dir, tol=tol)
+    r_opt = _plot_jakkar(ds, octs, "Jaccard vs $R_{21}$", fig_dir, tol=tol)
+    _plot_jhist(ds, octs, r_opt, "Histogram of combined data with $R_{opt}$", fig_dir, tol=tol)
 
 
 if __name__ == "__main__":
