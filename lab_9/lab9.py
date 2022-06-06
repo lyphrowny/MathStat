@@ -5,6 +5,7 @@ from operator import attrgetter
 from pathlib import Path
 import numpy as np
 import matplotlib.pyplot as plt
+import scipy.optimize
 
 Octave = namedtuple("Octave", "a b ws")
 
@@ -43,7 +44,7 @@ def _plot_dintervals(ds, title, subttls, fig_dir: Path, tol=1e-4):
 def _read_octave(file):
     with open(file, "r") as f:
         a, b = map(float, f.readline().split())
-        *ws, = map(float, f.readlines())
+        ws = np.array([*map(float, f.readlines())])
     return a, b, ws
 
 
@@ -101,6 +102,40 @@ def _plot_ndhist(ds, octs, title, subttls, fig_dir: Path):
     fig.savefig(fig_dir.joinpath(title))
 
 
+def _plot_jakkar(ds, octs, title, fig_dir: Path, tol=1e-4):
+    *ds, = map(np.array, ds)
+    xs = np.arange(1, len(ds[0]) + 1)
+    fix1, fix2 = [np.array([d - tol * oct.ws, d + tol * oct.ws]) - oct.b * xs for d, oct in zip(ds, octs)]
+
+    # rint_lower, rint_upper = (1.04, 1.07)
+    rint_lower, rint_upper = (0.5, 1.5)
+    rint = np.linspace(rint_lower, rint_upper, 10000)
+
+    def jac(r):
+        d_new = np.hstack((fix1 * r, fix2))
+        min_lower, *_, max_lower = np.sort(d_new[0, :])
+        min_upper, *_, max_upper = np.sort(d_new[1, :])
+        return (min_upper - max_lower) / (max_upper - min_lower)
+
+    _ctol = 1e-11
+    opt_r = scipy.optimize.fmin(lambda x: -jac(x), (rint_upper + rint_lower) / 2, xtol=_ctol)
+    ma = scipy.optimize.root(jac, rint_lower, method="lm", tol=_ctol).x
+    mi = scipy.optimize.root(jac, rint_upper, method="lm", tol=_ctol).x
+
+    plt.title(title)
+    plt.plot(rint, np.vectorize(jac)(rint), label="Jaccard", zorder=1)
+    _prec = 16
+    for v, plh in zip((opt_r, mi, ma), ("$R_{opt}=%.*f$", "$min=%.*f$", "$max=%.*f$")):
+        plt.scatter(v, jac(v), label=plh % (_prec, v), zorder=2)
+    plt.xlabel("$R_{21}$")
+    plt.ylabel("Jaccard")
+    plt.legend()
+    plt.show()
+    plt.savefig(fig_dir.joinpath(title))
+
+    return opt_r
+
+
 def lab9(data_dir: Path, fig_dir: Path, tol=1e-4):
     if not fig_dir.exists():
         fig_dir.mkdir(parents=True)
@@ -114,7 +149,8 @@ def lab9(data_dir: Path, fig_dir: Path, tol=1e-4):
     # _lin_drift(ds, octs, "Drifted data", subttls, fig_dir, tol=tol)
     # _plot_whist(octs, "Weights' histogram", subttls, fig_dir)
     # _plot_no_drift(ds, octs, "Data w\\o drift", subttls, fig_dir, tol=tol)
-    _plot_ndhist(ds, octs, "$I^c$ histogram", subttls, fig_dir)
+    # _plot_ndhist(ds, octs, "$I^c$ histogram", subttls, fig_dir)
+    _plot_jakkar(ds, octs, "Jaccard vs $R_{21}$", fig_dir, tol=tol)
 
 
 if __name__ == "__main__":
