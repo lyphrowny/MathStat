@@ -1,9 +1,12 @@
 import csv
-from collections import defaultdict
+from collections import namedtuple
+from itertools import starmap
+from operator import attrgetter
 from pathlib import Path
-
 import numpy as np
 import matplotlib.pyplot as plt
+
+Octave = namedtuple("Octave", "a b ws")
 
 
 def _read_csv(file_name):
@@ -37,13 +40,38 @@ def _plot_dintervals(ds, title, subttls, fig_dir: Path, tol=1e-4):
     fig.savefig(fig_dir.joinpath(title))
 
 
+def _read_octave(file):
+    with open(file, "r") as f:
+        a, b = map(float, f.readline().split())
+        *ws, = map(float, f.readlines())
+    return a, b, ws
+
+
+def _lin_drift(ds, octs: Octave, title, subttls, fig_dir: Path, tol=1e-4):
+    fig, axs = plt.subplots(1, len(ds), figsize=(10.5, 4), tight_layout=True)
+    fig.suptitle(title)
+    for d, oct, ax, subttl in zip(ds, octs, axs, subttls):
+        d, ws = map(np.array, (d, oct.ws))
+        xs = np.arange(1, len(d) + 1)
+        ax.vlines(xs, d - ws * tol, d + ws * tol, label="I")
+        ax.plot(xs, oct.a + xs * oct.b, label="Lin", color="orange", linewidth=2.5)
+        ax.set(title=subttl, xlabel="n", ylabel="mV")
+        ax.legend()
+    fig.show()
+    fig.savefig(fig_dir.joinpath(title))
+
+
 def lab9(data_dir: Path, fig_dir: Path, tol=1e-4):
     if not fig_dir.exists():
         fig_dir.mkdir(parents=True)
     *file_names, = data_dir.glob("*.csv")
     ds, es = zip(*map(_read_csv, file_names))
-    _plot_datas(ds, "Experiment data", file_names, fig_dir)
-    _plot_dintervals(ds, "Intervaled data", file_names, fig_dir, tol=tol)
+    *subttls, = map(attrgetter("stem"), file_names)
+    # _plot_datas(ds, "Experiment data", file_names, fig_dir)
+    # _plot_dintervals(ds, "Intervaled data", file_names, fig_dir, tol=tol)
+
+    *octs, = starmap(Octave, map(_read_octave, data_dir.glob("*.txt")))
+    _lin_drift(ds, octs, "Drifted data", subttls, fig_dir, tol=tol)
 
 
 if __name__ == "__main__":
