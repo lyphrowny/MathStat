@@ -11,30 +11,26 @@ Octave = namedtuple("Octave", "a b ws")
 
 
 def _read_csv(file_name):
-    # turn each line's col into float; unpack the list of tuples and feed these tuples
-    # to zip, for it to gather them element-wise (by columns)
-    return zip(*[map(float, line) for line in csv.reader(open(file_name), delimiter=";")])
+    # the second column isn't used in the whole program, let's ignore it altogether
+    return [float(mv) for (mv, e) in csv.reader(open(file_name), delimiter=";")]
 
 
-def _plot_datas(ds, title, subttls, fig_dir: Path):
+def _plot_datas(ds, enumed, title, subttls, fig_dir: Path):
     fig, axs = plt.subplots(1, len(ds), figsize=(10.5, 4), tight_layout=True)
     fig.suptitle(title)
     for d, ax, subttl in zip(ds, axs, subttls):
-        x, y = zip(*enumerate(d, start=1))
-        ax.plot(x, y, label=subttl)
+        ax.plot(enumed, d, label=subttl)
         ax.set(title=subttl, xlabel="n", ylabel="mV")
         ax.legend()
     fig.show()
     fig.savefig(fig_dir.joinpath(title))
 
 
-def _plot_dintervals(ds, title, subttls, fig_dir: Path, tol=1e-4):
+def _plot_dintervals(ds, enumed, title, subttls, fig_dir: Path, tol=1e-4):
     fig, axs = plt.subplots(1, len(ds), figsize=(10.5, 4), tight_layout=True)
     fig.suptitle(title)
     for d, ax, subttl in zip(ds, axs, subttls):
-        ax.vlines(1, d[0] - tol, d[0] + tol, label=subttl)
-        for n, v in enumerate(d[1:], start=2):
-            ax.vlines(n, v - tol, v + tol)
+        ax.vlines(enumed, d - tol, d + tol, label=subttl)
         ax.set(title=subttl, xlabel="n", ylabel="mV")
         ax.legend()
     fig.show()
@@ -52,9 +48,8 @@ def _lin_drift(ds, octs: Octave, title, subttls, fig_dir: Path, tol=1e-4):
     fig, axs = plt.subplots(1, len(ds), figsize=(10.5, 4), tight_layout=True)
     fig.suptitle(title)
     for d, oct, ax, subttl in zip(ds, octs, axs, subttls):
-        d, ws = map(np.array, (d, oct.ws))
         xs = np.arange(1, len(d) + 1)
-        ax.vlines(xs, d - ws * tol, d + ws * tol, label="I")
+        ax.vlines(xs, d - oct.ws * tol, d + oct.ws * tol, label="I")
         ax.plot(xs, oct.a + xs * oct.b, label="Lin", color="orange", linewidth=2.5)
         ax.set(title=subttl, xlabel="n", ylabel="mV")
         ax.legend()
@@ -77,10 +72,9 @@ def _plot_no_drift(ds, octs: Octave, title, subttls, fig_dir: Path, tol=1e-4):
     fig, axs = plt.subplots(1, len(ds), figsize=(10.5, 4), tight_layout=True)
     fig.suptitle(title)
     for d, oct, ax, subttl in zip(ds, octs, axs, subttls):
-        d, ws = map(np.array, (d, oct.ws))
         xs = np.arange(1, len(d) + 1)
         fixed = d - xs * oct.b
-        ax.vlines(xs, fixed - ws * tol, fixed + ws * tol, label="I")
+        ax.vlines(xs, fixed - oct.ws * tol, fixed + oct.ws * tol, label="I")
         ax.plot(xs, np.full(xs[~0], oct.a), label="Lin", color="orange", linewidth=2.5)
         ax.set(title=subttl, xlabel="n", ylabel="mV")
         ax.legend()
@@ -92,7 +86,6 @@ def _plot_ndhist(ds, octs, title, subttls, fig_dir: Path):
     fig, axs = plt.subplots(1, len(ds), figsize=(10.5, 4), tight_layout=True)
     fig.suptitle(title)
     for d, oct, ax, subttl in zip(ds, octs, axs, subttls):
-        d, ws = map(np.array, (d, oct.ws))
         xs = np.arange(1, len(d) + 1)
         fixed = d - xs * oct.b
         ax.hist(fixed, label="$I^c$")
@@ -103,7 +96,6 @@ def _plot_ndhist(ds, octs, title, subttls, fig_dir: Path):
 
 
 def _plot_jakkar(ds, octs, title, fig_dir: Path, tol=1e-4):
-    *ds, = map(np.array, ds)
     xs = np.arange(1, len(ds[0]) + 1)
     fix1, fix2 = [np.array([d - tol * oct.ws, d + tol * oct.ws]) - oct.b * xs for d, oct in zip(ds, octs)]
 
@@ -137,7 +129,6 @@ def _plot_jakkar(ds, octs, title, fig_dir: Path, tol=1e-4):
 
 
 def _plot_jhist(ds, octs, r_opt, title, fig_dir: Path, tol=1e-4):
-    *ds, = map(np.array, ds)
     xs = np.arange(1, len(ds[0]) + 1)
     fix1, fix2 = [np.array([d - tol * oct.ws, d + tol * oct.ws]) - oct.b * xs for d, oct in zip(ds, octs)]
     d_new = np.hstack((fix1 * r_opt, fix2))
@@ -155,16 +146,17 @@ def lab9(data_dir: Path, fig_dir: Path, tol=1e-4):
     if not fig_dir.exists():
         fig_dir.mkdir(parents=True)
     *file_names, = data_dir.glob("*.csv")
-    ds, es = zip(*map(_read_csv, file_names))
+    ds = np.array([*map(_read_csv, file_names)])
+    enumed = np.arange(1, ds.shape[1] + 1)
     *subttls, = map(attrgetter("stem"), file_names)
-    # _plot_datas(ds, "Experiment data", file_names, fig_dir)
-    # _plot_dintervals(ds, "Intervaled data", file_names, fig_dir, tol=tol)
+    _plot_datas(ds, enumed, "Experiment data", subttls, fig_dir)
+    _plot_dintervals(ds, enumed, "Intervaled data", subttls, fig_dir, tol=tol)
 
     *octs, = starmap(Octave, map(_read_octave, data_dir.glob("*.txt")))
-    # _lin_drift(ds, octs, "Drifted data", subttls, fig_dir, tol=tol)
-    # _plot_whist(octs, "Weights' histogram", subttls, fig_dir)
-    # _plot_no_drift(ds, octs, "Data w\\o drift", subttls, fig_dir, tol=tol)
-    # _plot_ndhist(ds, octs, "$I^c$ histogram", subttls, fig_dir)
+    _lin_drift(ds, octs, "Drifted data", subttls, fig_dir, tol=tol)
+    _plot_whist(octs, "Weights' histogram", subttls, fig_dir)
+    _plot_no_drift(ds, octs, "Data w\\o drift", subttls, fig_dir, tol=tol)
+    _plot_ndhist(ds, octs, "$I^c$ histogram", subttls, fig_dir)
     r_opt = _plot_jakkar(ds, octs, "Jaccard vs $R_{21}$", fig_dir, tol=tol)
     _plot_jhist(ds, octs, r_opt, "Histogram of combined data with $R_{opt}$", fig_dir, tol=tol)
 
