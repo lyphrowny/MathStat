@@ -10,7 +10,7 @@ function [betas, ws] = min(A, inf, sup)
     c_type = [char(zeros(m, 1) + double("U")); char(zeros(m, 1) + double("L"))];
     b_type = char(zeros(n + m, 1) + double("C"));
     
-    lb = [-Inf(n, 1); ones(m, 1)];
+    lb = [-Inf(n, 1); zeros(m, 1)];
     ub = Inf(n + m, 1);
     
     x = glpk(c, A, b, lb, ub, c_type, b_type);
